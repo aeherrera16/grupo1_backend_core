@@ -10,7 +10,6 @@ import lombok.Setter;
 public class CustomerResponseDTO {
 
     private Integer id;
-    private String customerCode;
     private CustomerTypeEnum customerType;
     private String identificationType;
     private String identification;
@@ -21,19 +20,13 @@ public class CustomerResponseDTO {
     private String address;
     private CustomerStatusEnum status;
 
-    private String legalName;
-    private java.time.LocalDate constitutionDate;
-    private Integer legalRepresentativeId;
-
     public CustomerResponseDTO() {
     }
 
-    public CustomerResponseDTO(Integer id, String customerCode, CustomerTypeEnum customerType, String identificationType,
+    public CustomerResponseDTO(Integer id, CustomerTypeEnum customerType, String identificationType,
                                String identification, String firstName, String lastName, String email,
-                               String mobilePhone, String address, CustomerStatusEnum status,
-                               String legalName, java.time.LocalDate constitutionDate, Integer legalRepresentativeId) {
+                               String mobilePhone, String address, CustomerStatusEnum status) {
         this.id = id;
-        this.customerCode = customerCode;
         this.customerType = customerType;
         this.identificationType = identificationType;
         this.identification = identification;
@@ -43,8 +36,5 @@ public class CustomerResponseDTO {
         this.mobilePhone = mobilePhone;
         this.address = address;
         this.status = status;
-        this.legalName = legalName;
-        this.constitutionDate = constitutionDate;
-        this.legalRepresentativeId = legalRepresentativeId;
     }
 }
