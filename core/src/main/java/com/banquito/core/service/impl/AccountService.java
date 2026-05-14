@@ -86,6 +86,15 @@ public class AccountService implements IAccountService {
             throw new IllegalArgumentException("El saldo inicial no puede ser negativo");
         }
 
+        if (Boolean.TRUE.equals(request.getIsFavorite())) {
+            accountRepository.findByCustomer_IdAndIsFavoriteTrue(customer.getId())
+                    .ifPresent(acc -> {
+                        acc.setIsFavorite(false);
+                        accountRepository.save(acc);
+                    });
+        }
+
+
         LocalDateTime now = LocalDateTime.now();
         Account account = new Account();
         account.setAccountNumber(resolveAccountNumber(request.getAccountNumber(), branch));
@@ -333,10 +342,35 @@ public class AccountService implements IAccountService {
 
     @Transactional(readOnly = true)
     @Override
-    public AccountResponseDTO getFavoriteAccount() {
-        Account account = accountRepository.findByIsFavoriteTrue()
-                .orElseThrow(() -> new AccountNotFoundException("No existe cuenta favorita configurada"));
+    public AccountResponseDTO getFavoriteAccount(Integer customerId) {
+        Account account = accountRepository.findByCustomer_IdAndIsFavoriteTrue(customerId)
+                .orElseThrow(() -> new AccountNotFoundException("No se encontró cuenta favorita para el cliente ID: " + customerId));
         return toResponse(account);
+    }
+
+    @Transactional
+    @Override
+    public AccountResponseDTO updateFavoriteAccount(String accountNumber, Integer customerId) {
+        Account newFavorite = accountRepository.findByAccountNumber(accountNumber)
+                .orElseThrow(() -> new AccountNotFoundException(accountNumber));
+
+        if (!newFavorite.getCustomer().getId().equals(customerId)) {
+            throw new IllegalArgumentException("La cuenta no pertenece al cliente especificado.");
+        }
+
+        if (newFavorite.getStatus() != com.banquito.core.enums.AccountStatusEnum.ACTIVO) {
+            throw new IllegalStateException("Solo se puede marcar como favorita una cuenta en estado ACTIVO.");
+        }
+
+        accountRepository.findByCustomer_IdAndIsFavoriteTrue(customerId)
+                .ifPresent(acc -> {
+                    acc.setIsFavorite(false);
+                    accountRepository.save(acc);
+                });
+
+        newFavorite.setIsFavorite(true);
+        log.info("Cliente {} cambió su cuenta favorita a {}", customerId, accountNumber);
+        return toResponse(accountRepository.save(newFavorite));
     }
 
     private String generateTransactionUuid() {
