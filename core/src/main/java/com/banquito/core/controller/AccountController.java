@@ -40,6 +40,13 @@ public class AccountController {
         return ResponseEntity.ok(accountService.findByAccountNumber(accountNumber, coreUserId));
     }
 
+    @GetMapping("/customer/{customerId}/transactions")
+    public ResponseEntity<List<TransactionResponseDTO>> findTransactionsByCustomerId(
+            @PathVariable Integer customerId,
+            @RequestHeader(CORE_USER_HEADER) Integer coreUserId) {
+        return ResponseEntity.ok(accountService.findTransactionsByCustomerId(customerId, coreUserId));
+    }
+
     @PostMapping
     public ResponseEntity<AccountResponseDTO> create(
             @RequestBody AccountRequestDTO request,
@@ -86,9 +93,16 @@ public class AccountController {
         return ResponseEntity.ok(accountService.transfer(request.origin(), request.destination(), request.amount(), request.uuid()));
     }
 
-    @GetMapping("/default/favorite")
-    public ResponseEntity<AccountResponseDTO> getFavoriteAccount() {
-        return ResponseEntity.ok(accountService.getFavoriteAccount());
+    @GetMapping("/favorite/customer/{customerId}")
+    public ResponseEntity<AccountResponseDTO> getFavorite(@PathVariable Integer customerId) {
+        return ResponseEntity.ok(accountService.getFavoriteAccount(customerId));
+    }
+
+    @PutMapping("/{accountNumber}/favorite/customer/{customerId}")
+    public ResponseEntity<AccountResponseDTO> updateFavorite(
+            @PathVariable String accountNumber,
+            @PathVariable Integer customerId) {
+        return ResponseEntity.ok(accountService.updateFavoriteAccount(accountNumber, customerId));
     }
 
     record AmountRequest(BigDecimal amount) {}

@@ -27,6 +27,7 @@ public class DataInitializer implements CommandLineRunner {
     private final BranchRepository branchRepository;
     private final AccountSubtypeRepository accountSubtypeRepository;
     private final TransactionSubtypeRepository transactionSubtypeRepository;
+    private final CoreParameterRepository coreParameterRepository;
     private final CustomerRepository customerRepository;
     private final AccountRepository accountRepository;
     private final InstitutionalAccountRepository institutionalAccountRepository;
@@ -39,6 +40,7 @@ public class DataInitializer implements CommandLineRunner {
         initBranches();
         initAccountSubtypes();
         initTransactionSubtypes();
+        initCoreParameters();
         initInstitutionalAccounts();
 
         if (coreUserRepository.count() == 0) {
@@ -242,6 +244,32 @@ public class DataInitializer implements CommandLineRunner {
         }
 
         log.info("TransactionSubtypes creados o verificados");
+    }
+
+    private void initCoreParameters() {
+        if (coreParameterRepository.findByCode("MAX_TRANSFER_AMOUNT").isEmpty()) {
+            CoreParameter maxTransferAmount = new CoreParameter();
+            maxTransferAmount.setCode("MAX_TRANSFER_AMOUNT");
+            maxTransferAmount.setName("Monto maximo permitido para transferencias");
+            maxTransferAmount.setValueString("99999999.99");
+            maxTransferAmount.setDataType("DECIMAL");
+            maxTransferAmount.setDescription("Límite máximo permitido por el banco para transferencias");
+            maxTransferAmount.setLastUpdate(LocalDateTime.now());
+            coreParameterRepository.save(maxTransferAmount);
+        }
+
+        if (coreParameterRepository.findByCode("MAX_TRANSFER_NOM").isEmpty()) {
+            CoreParameter maxTransferNom = new CoreParameter();
+            maxTransferNom.setCode("MAX_TRANSFER_NOM");
+            maxTransferNom.setName("Monto maximo permitido para nómina");
+            maxTransferNom.setValueString("99999999.99");
+            maxTransferNom.setDataType("DECIMAL");
+            maxTransferNom.setDescription("Límite máximo permitido para transferencias de nómina");
+            maxTransferNom.setLastUpdate(LocalDateTime.now());
+            coreParameterRepository.save(maxTransferNom);
+        }
+
+        log.info("CoreParameters creados o verificados");
     }
 
     private void initInstitutionalAccounts() {
