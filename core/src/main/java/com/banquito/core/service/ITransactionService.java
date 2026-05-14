@@ -2,6 +2,7 @@ package com.banquito.core.service;
 
 import com.banquito.core.dto.TransactionResponseDTO;
 import java.math.BigDecimal;
+import java.util.List;
 
 public interface ITransactionService {
 
