@@ -121,6 +121,12 @@ public class AccountService implements IAccountService {
         return changeStatus(accountNumber, AccountStatusEnum.SUSPENDIDO, coreUserId);
     }
 
+    @Transactional
+    @Override
+    public AccountResponseDTO activate(String accountNumber, Integer coreUserId) {
+        return changeStatus(accountNumber, AccountStatusEnum.ACTIVO, coreUserId);
+    }
+
     private AccountResponseDTO changeStatus(String accountNumber, AccountStatusEnum status, Integer coreUserId) {
         authenticationService.validateActiveCoreUser(coreUserId);
         Account account = accountRepository.findByAccountNumber(accountNumber)
@@ -164,7 +170,7 @@ public class AccountService implements IAccountService {
         accountRepository.save(account);
 
         String uuid = generateTransactionUuid();
-        AccountTransaction transaction = registerTransaction(account, amount, MovementTypeEnum.DEBITO, account.getAvailableBalance(), uuid, "RETIRO_ATM");
+        AccountTransaction transaction = registerTransaction(account, amount, MovementTypeEnum.DEBITO, account.getAvailableBalance(), uuid, "ATM_WITHDRAW");
         return toTransactionResponse(transaction, accountNumber, "Debito realizado exitosamente");
     }
 
@@ -185,7 +191,7 @@ public class AccountService implements IAccountService {
         accountRepository.save(account);
 
         String uuid = generateTransactionUuid();
-        AccountTransaction transaction = registerTransaction(account, amount, MovementTypeEnum.CREDITO, account.getAvailableBalance(), uuid, "DEPOSITO");
+        AccountTransaction transaction = registerTransaction(account, amount, MovementTypeEnum.CREDITO, account.getAvailableBalance(), uuid, "DEPOSIT");
         return toTransactionResponse(transaction, accountNumber, "Credito realizado exitosamente");
     }
 
@@ -313,13 +319,14 @@ public class AccountService implements IAccountService {
     }
 
     private String resolveAccountNumber(String requestedAccountNumber, Branch branch) {
-        if (requestedAccountNumber != null && !requestedAccountNumber.isBlank()) {
-            if (!requestedAccountNumber.startsWith(branch.getBranchCode() + "-")) {
-                throw new IllegalArgumentException("El numero de cuenta debe iniciar con el codigo de la sucursal");
-            }
-            return requestedAccountNumber;
-        }
-        return branch.getBranchCode() + "-" + UUID.randomUUID().toString().replace("-", "").substring(0, 9).toUpperCase();
+        String accountNumber;
+
+        do {
+            accountNumber = branch.getBranchCode() + "-"
+                    + UUID.randomUUID().toString().replace("-", "").substring(0, 9).toUpperCase();
+        } while (accountRepository.findByAccountNumber(accountNumber).isPresent());
+
+        return accountNumber;
     }
 
     private void validateUuid(String uuid) {

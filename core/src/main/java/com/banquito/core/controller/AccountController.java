@@ -5,15 +5,7 @@ import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import com.banquito.core.dto.AccountRequestDTO;
 import com.banquito.core.dto.AccountResponseDTO;
@@ -74,6 +66,13 @@ public class AccountController {
             @PathVariable String accountNumber,
             @RequestHeader(CORE_USER_HEADER) Integer coreUserId) {
         return ResponseEntity.ok(accountService.suspend(accountNumber, coreUserId));
+    }
+
+    @PatchMapping("/{accountNumber}/activate")
+    public ResponseEntity<AccountResponseDTO> activate(
+            @PathVariable String accountNumber,
+            @RequestParam Integer coreUserId) {
+        return ResponseEntity.ok(accountService.activate(accountNumber, coreUserId));
     }
 
     @PostMapping("/{accountNumber}/credit")
