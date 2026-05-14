@@ -51,4 +51,9 @@ public class TransactionController {
                 request.getDescription()
         ));
     }
+
+    @GetMapping("/account/{accountNumber}")
+    public ResponseEntity<List<TransactionResponseDTO>> getLatestTransactions(@PathVariable String accountNumber) {
+        return ResponseEntity.ok(transactionService.getLatestTransactions(accountNumber));
+    }
 }

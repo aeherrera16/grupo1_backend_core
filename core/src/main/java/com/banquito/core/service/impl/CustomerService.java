@@ -53,6 +53,15 @@ public class CustomerService implements ICustomerService {
         CustomerSubtype subtype = customerSubtypeRepository.findById(request.getCustomerSubtypeId())
                 .orElseThrow(() -> new RuntimeException("Subtipo de cliente no encontrado: " + request.getCustomerSubtypeId()));
 
+        if (request.getCustomerType() == com.banquito.core.enums.CustomerTypeEnum.JURIDICO) {
+            if (request.getLegalRepresentativeId() == null) {
+                throw new IllegalArgumentException("Una Persona Jurídica debe tener obligatoriamente un Representante Legal asignado.");
+            }
+            if (request.getConstitutionDate() == null) {
+                throw new IllegalArgumentException("Una Persona Jurídica debe registrar su Fecha de Constitución.");
+            }
+        }
+
         Customer customer = new Customer();
         customer.setCustomerSubtype(subtype);
         customer.setCustomerType(request.getCustomerType());

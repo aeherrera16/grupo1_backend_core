@@ -115,6 +115,20 @@ public class TransactionService implements ITransactionService {
         return toResponse(debit, "Transferencia procesada correctamente");
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public List<TransactionResponseDTO> getLatestTransactions(String accountNumber) {
+        Account account = accountRepository.findByAccountNumber(accountNumber)
+                .orElseThrow(() -> new AccountNotFoundException(accountNumber));
+
+        List<AccountTransaction> transactions = transactionRepository
+                .findTop10ByAccount_IdOrderByTransactionDateDesc(account.getId());
+
+        return transactions.stream()
+                .map(t -> toResponse(t, "Consulta de movimiento exitosa"))
+                .toList();
+    }
+
     private void validateUuid(String uuid) {
         if (uuid == null || uuid.isBlank()) {
             throw new IllegalArgumentException("TRANSACTION_UUID es obligatorio");

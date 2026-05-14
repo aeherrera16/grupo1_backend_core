@@ -11,4 +11,6 @@ public interface ITransactionService {
 
     TransactionResponseDTO transfer(String originAccount, String destinationAccount, BigDecimal amount,
                                       String uuid, String subtypeCode, String description);
+
+    List<TransactionResponseDTO> getLatestTransactions(String accountNumber);
 }
