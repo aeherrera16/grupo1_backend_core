@@ -72,6 +72,7 @@ public class AccountService implements IAccountService {
     @Override
     public AccountResponseDTO create(AccountRequestDTO request, Integer coreUserId) {
         authenticationService.validateActiveCoreUser(coreUserId);
+        validateAccountRequest(request);
 
         Customer customer = customerRepository.findById(request.getCustomerId())
                 .orElseThrow(() -> new RuntimeException("Cliente no encontrado: " + request.getCustomerId()));
@@ -87,7 +88,7 @@ public class AccountService implements IAccountService {
 
         LocalDateTime now = LocalDateTime.now();
         Account account = new Account();
-        account.setAccountNumber(request.getAccountNumber());
+        account.setAccountNumber(resolveAccountNumber(request.getAccountNumber(), branch));
         account.setCustomer(customer);
         account.setBranch(branch);
         account.setAccountSubtype(subtype);

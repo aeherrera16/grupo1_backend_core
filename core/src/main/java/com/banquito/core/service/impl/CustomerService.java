@@ -78,6 +78,28 @@ public class CustomerService implements ICustomerService {
         return toResponse(customerRepository.save(customer));
     }
 
+    @Transactional
+    @Override
+    public CustomerResponseDTO update(Integer id, CustomerRequestDTO request) {
+        Customer customer = customerRepository.findById(id)
+                .orElseThrow(() -> new CustomerNotFoundException(String.valueOf(id)));
+
+        if (request.getEmail() != null && !request.getEmail().isBlank()) {
+            customer.setEmail(request.getEmail());
+        }
+
+        if (request.getMobilePhone() != null && !request.getMobilePhone().isBlank()) {
+            customer.setMobilePhone(request.getMobilePhone());
+        }
+
+        if (request.getAddress() != null && !request.getAddress().isBlank()) {
+            customer.setAddress(request.getAddress());
+        }
+
+        log.info("Actualizando datos del cliente con ID: {}", id);
+        return toResponse(customerRepository.save(customer));
+    }
+
     private CustomerResponseDTO toResponse(Customer customer) {
         return new CustomerResponseDTO(
                 customer.getId(),
