@@ -25,6 +25,7 @@ import com.banquito.core.repository.CustomerRepository;
 import com.banquito.core.repository.TransactionSubtypeRepository;
 import com.banquito.core.service.IAccountService;
 import com.banquito.core.service.IAuthenticationService;
+import com.banquito.core.service.IEmailService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -48,6 +49,7 @@ public class AccountService implements IAccountService {
     private final AccountTransactionRepository transactionRepository;
     private final TransactionSubtypeRepository transactionSubtypeRepository;
     private final IAuthenticationService authenticationService;
+    private final IEmailService emailService;
 
     @Transactional(readOnly = true)
     @Override
@@ -151,10 +153,23 @@ public class AccountService implements IAccountService {
         authenticationService.validateActiveCoreUser(coreUserId);
         Account account = accountRepository.findByAccountNumber(accountNumber)
                 .orElseThrow(() -> new AccountNotFoundException(accountNumber));
+
         account.setStatus(status);
         account.setLastUpdate(LocalDateTime.now());
+
+        Account savedAccount = accountRepository.save(account);
         log.info("CoreUser {} cambia cuenta {} a {}", coreUserId, accountNumber, status);
-        return toResponse(accountRepository.save(account));
+
+        if (status == AccountStatusEnum.BLOQUEADO || status == AccountStatusEnum.SUSPENDIDO) {
+            String email = savedAccount.getCustomer().getEmail();
+            if (email != null && !email.isBlank()) {
+                emailService.sendStatusChangeEmail(email, savedAccount.getAccountNumber(), status.name());
+            } else {
+                log.warn("El cliente de la cuenta {} no tiene un email registrado para notificar.", accountNumber);
+            }
+        }
+
+        return toResponse(savedAccount);
     }
 
     @Transactional(readOnly = true)
