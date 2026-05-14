@@ -220,12 +220,26 @@ public class DataInitializer implements CommandLineRunner {
         CustomerSubtype personal = customerSubtypeRepository.findAll().stream()
                 .filter(s -> "PERSONAL".equals(s.getName()))
                 .findFirst()
-                .orElseThrow(() -> new IllegalStateException("Subtype PERSONAL no encontrado en seed"));
+                .orElseGet(() -> {
+                    CustomerSubtype p = new CustomerSubtype();
+                    p.setCustomerType("NATURAL");
+                    p.setName("PERSONAL");
+                    p.setDescription("Clientes personas naturales");
+                    p.setStatus(CustomerSubtypeStatusEnum.ACTIVO);
+                    return customerSubtypeRepository.save(p);
+                });
 
         CustomerSubtype empresaPagosMasivosSubtype = customerSubtypeRepository.findAll().stream()
                 .filter(s -> "EMPRESA_PAGOS_MASIVOS".equals(s.getName()))
                 .findFirst()
-                .orElseThrow(() -> new IllegalStateException("Subtype EMPRESA_PAGOS_MASIVOS no encontrado en seed"));
+                .orElseGet(() -> {
+                    CustomerSubtype e = new CustomerSubtype();
+                    e.setCustomerType("JURIDICO");
+                    e.setName("EMPRESA_PAGOS_MASIVOS");
+                    e.setDescription("Empresa con servicio Pagos Masivos Switch activo");
+                    e.setStatus(CustomerSubtypeStatusEnum.ACTIVO);
+                    return customerSubtypeRepository.save(e);
+                });
 
         if (customerRepository.findByIdentificationTypeAndIdentification("CEDULA", "1234567890").isEmpty()) {
             Customer bryan = new Customer();
