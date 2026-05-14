@@ -4,6 +4,7 @@ import com.banquito.core.model.Notification;
 import com.banquito.core.repository.NotificationRepository;
 import com.banquito.core.enums.AccountStatusEnum;
 import com.banquito.core.enums.CommonStatusEnum;
+import com.banquito.core.enums.CoreUserRoleEnum;
 import com.banquito.core.enums.CustomerStatusEnum;
 import com.banquito.core.enums.CustomerSubtypeStatusEnum;
 import com.banquito.core.enums.CustomerTypeEnum;
@@ -183,7 +184,7 @@ public class DataInitializer implements CommandLineRunner {
             admin.setUsername("admin.core");
             admin.setPasswordHash(passwordEncoder.encode("admin"));
             admin.setFullName("Administrador Core");
-            admin.setRole("ADMIN");
+            admin.setRole(CoreUserRoleEnum.OPERARIO);
             admin.setStatus(CommonStatusEnum.ACTIVO);
             admin.setCreationDate(LocalDateTime.now());
             coreUserRepository.save(admin);
@@ -194,7 +195,7 @@ public class DataInitializer implements CommandLineRunner {
             op.setUsername("operador");
             op.setPasswordHash(passwordEncoder.encode("1234"));
             op.setFullName("Operador Principal");
-            op.setRole("OPERADOR");
+            op.setRole(CoreUserRoleEnum.OPERARIO);
             op.setStatus(CommonStatusEnum.ACTIVO);
             op.setCreationDate(LocalDateTime.now());
             coreUserRepository.save(op);
@@ -205,7 +206,7 @@ public class DataInitializer implements CommandLineRunner {
             ca.setUsername("cajero");
             ca.setPasswordHash(passwordEncoder.encode("1234"));
             ca.setFullName("Asesor Ventanilla");
-            ca.setRole("CAJERO");
+            ca.setRole(CoreUserRoleEnum.OPERARIO);
             ca.setStatus(CommonStatusEnum.ACTIVO);
             ca.setCreationDate(LocalDateTime.now());
             coreUserRepository.save(ca);

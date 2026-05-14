@@ -1,6 +1,7 @@
 package com.banquito.core.model;
 
 import com.banquito.core.enums.CommonStatusEnum;
+import com.banquito.core.enums.CoreUserRoleEnum;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -36,8 +37,9 @@ public class CoreUser {
     @Column(name = "FULL_NAME", nullable = false, length = 150)
     private String fullName;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "ROLE", nullable = false, length = 50)
-    private String role;
+    private CoreUserRoleEnum role;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "STATUS", nullable = false, length = 15)
