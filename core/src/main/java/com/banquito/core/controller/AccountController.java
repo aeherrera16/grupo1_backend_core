@@ -5,15 +5,7 @@ import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import com.banquito.core.dto.AccountRequestDTO;
 import com.banquito.core.dto.AccountResponseDTO;
@@ -94,9 +86,16 @@ public class AccountController {
         return ResponseEntity.ok(accountService.transfer(request.origin(), request.destination(), request.amount(), request.uuid()));
     }
 
-    @GetMapping("/default/favorite")
-    public ResponseEntity<AccountResponseDTO> getFavoriteAccount() {
-        return ResponseEntity.ok(accountService.getFavoriteAccount());
+    @GetMapping("/favorite/customer/{customerId}")
+    public ResponseEntity<AccountResponseDTO> getFavorite(@PathVariable Integer customerId) {
+        return ResponseEntity.ok(accountService.getFavoriteAccount(customerId));
+    }
+
+    @PutMapping("/{accountNumber}/favorite/customer/{customerId}")
+    public ResponseEntity<AccountResponseDTO> updateFavorite(
+            @PathVariable String accountNumber,
+            @PathVariable Integer customerId) {
+        return ResponseEntity.ok(accountService.updateFavoriteAccount(accountNumber, customerId));
     }
 
     record AmountRequest(BigDecimal amount) {}
