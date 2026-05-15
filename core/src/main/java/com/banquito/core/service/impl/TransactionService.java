@@ -254,7 +254,8 @@ public class TransactionService implements ITransactionService {
                         transaction.getTransactionSubtype().getName(),
                         transaction.getDescription(),
                         transaction.getAmount(),
-                        transaction.getResultingBalance()
+                        transaction.getResultingBalance(),
+                        transaction.getStatus().name()
                 ))
                 .collect(Collectors.toList());
     }

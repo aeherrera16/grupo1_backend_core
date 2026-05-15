@@ -73,6 +73,19 @@ public class CustomerService implements ICustomerService {
         customer.setStatus(CustomerStatusEnum.ACTIVO);
         customer.setRegistrationDate(LocalDateTime.now());
 
+        java.util.Random random = new java.util.Random();
+
+        double minLat = -0.30;
+        double maxLat = -0.15;
+        double minLng = -78.52;
+        double maxLng = -78.45;
+
+        double randomLatitude = minLat + (maxLat - minLat) * random.nextDouble();
+        double randomLongitude = minLng + (maxLng - minLng) * random.nextDouble();
+
+        customer.setLatitude(java.math.BigDecimal.valueOf(randomLatitude));
+        customer.setLongitude(java.math.BigDecimal.valueOf(randomLongitude));
+
         log.info("Creando cliente con identificación: {}", customer.getIdentification());
         return toResponse(customerRepository.save(customer));
     }
