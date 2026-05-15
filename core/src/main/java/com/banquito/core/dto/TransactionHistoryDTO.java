@@ -19,13 +19,14 @@ public class TransactionHistoryDTO {
     private String description;
     private BigDecimal amount;
     private BigDecimal resultingBalance;
+    private String status;
 
     public TransactionHistoryDTO() {
     }
 
     public TransactionHistoryDTO(Long transactionId, LocalDateTime date, MovementTypeEnum type,
                                  String subtypeCode, String subtypeName, String description,
-                                 BigDecimal amount, BigDecimal resultingBalance) {
+                                 BigDecimal amount, BigDecimal resultingBalance, String status) {
         this.transactionId = transactionId;
         this.date = date;
         this.type = type;
@@ -34,5 +35,6 @@ public class TransactionHistoryDTO {
         this.description = description;
         this.amount = amount;
         this.resultingBalance = resultingBalance;
+        this.status = status;
     }
 }

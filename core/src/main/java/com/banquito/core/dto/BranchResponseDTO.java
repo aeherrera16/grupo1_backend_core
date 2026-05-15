@@ -16,7 +16,7 @@ public class BranchResponseDTO {
     public BranchResponseDTO() {
     }
 
-    public BranchResponseDTO(Integer id, String branchCode, String name, String city) {
+    public BranchResponseDTO(Integer id, String branchCode, String name, String city, LocalDateTime creationDate) {
         this.id = id;
         this.branchCode = branchCode;
         this.name = name;
