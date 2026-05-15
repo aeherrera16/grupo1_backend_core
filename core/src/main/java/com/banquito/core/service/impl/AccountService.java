@@ -445,10 +445,10 @@ public class AccountService implements IAccountService {
 
     private String resolveAccountNumber(String requestedAccountNumber, Branch branch) {
         String accountNumber;
-
+        java.util.Random random = new java.util.Random();
         do {
-            accountNumber = branch.getBranchCode()
-                    + UUID.randomUUID().toString().replace("-", "").substring(0, 7).toUpperCase();
+            String randomDigits = String.format("%07d", random.nextInt(10000000));
+            accountNumber = branch.getBranchCode() + randomDigits;
         } while (accountRepository.findByAccountNumber(accountNumber).isPresent());
 
         return accountNumber;
