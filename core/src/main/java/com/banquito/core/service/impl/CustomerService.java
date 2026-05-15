@@ -28,12 +28,6 @@ public class CustomerService implements ICustomerService {
 
     @Transactional(readOnly = true)
     @Override
-    public List<CustomerResponseDTO> findAll() {
-        return customerRepository.findAll().stream().map(this::toResponse).toList();
-    }
-
-    @Transactional(readOnly = true)
-    @Override
     public CustomerResponseDTO findById(Integer id) {
         Customer customer = customerRepository.findById(id)
                 .orElseThrow(() -> new CustomerNotFoundException(String.valueOf(id)));
