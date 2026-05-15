@@ -14,6 +14,8 @@ public interface IAccountService {
 
     List<AccountResponseDTO> findByCustomerId(Integer customerId, Integer coreUserId);
 
+    List<TransactionResponseDTO> findTransactionsByCustomerId(Integer customerId, Integer coreUserId);
+
     AccountResponseDTO create(AccountRequestDTO request, Integer coreUserId);
 
     AccountResponseDTO inactivate(String accountNumber, Integer coreUserId);
@@ -21,6 +23,8 @@ public interface IAccountService {
     AccountResponseDTO block(String accountNumber, Integer coreUserId);
 
     AccountResponseDTO suspend(String accountNumber, Integer coreUserId);
+
+    AccountResponseDTO activate(String accountNumber, Integer coreUserId);
 
     BalanceDTO getBalance(String accountNumber);
 
@@ -30,5 +34,8 @@ public interface IAccountService {
 
     TransactionResponseDTO transfer(String origin, String destination, BigDecimal amount, String uuid);
 
-    AccountResponseDTO getFavoriteAccount();
+    AccountResponseDTO getFavoriteAccount(Integer customerId);
+
+
+    AccountResponseDTO updateFavoriteAccount(String accountNumber, Integer customerId);
 }

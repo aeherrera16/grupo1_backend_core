@@ -21,6 +21,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.util.List;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -116,6 +117,20 @@ public class TransactionService implements ITransactionService {
                 originAccountNumber, destinationAccountNumber, amount, uuid);
 
         return toResponse(debit, "Transferencia procesada correctamente");
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<TransactionResponseDTO> getLatestTransactions(String accountNumber) {
+        Account account = accountRepository.findByAccountNumber(accountNumber)
+                .orElseThrow(() -> new AccountNotFoundException(accountNumber));
+
+        List<AccountTransaction> transactions = transactionRepository
+                .findTop10ByAccount_IdOrderByTransactionDateDesc(account.getId());
+
+        return transactions.stream()
+                .map(t -> toResponse(t, "Consulta de movimiento exitosa"))
+                .toList();
     }
 
     private void validateUuid(String uuid) {
