@@ -1,6 +1,7 @@
 package com.banquito.core.service;
 
 import com.banquito.core.dto.TransactionResponseDTO;
+import com.banquito.core.dto.TransactionHistoryDTO;
 import java.math.BigDecimal;
 import java.util.List;
 
@@ -13,5 +14,5 @@ public interface ITransactionService {
     TransactionResponseDTO transfer(String originAccount, String destinationAccount, BigDecimal amount,
                                       String uuid, String subtypeCode, String description);
 
-    List<TransactionResponseDTO> getLatestTransactions(String accountNumber);
+    List<TransactionHistoryDTO> getTransactionHistory(String accountNumber);
 }

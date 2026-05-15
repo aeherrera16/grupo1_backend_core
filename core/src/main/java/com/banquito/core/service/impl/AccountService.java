@@ -25,6 +25,7 @@ import com.banquito.core.repository.CustomerRepository;
 import com.banquito.core.repository.TransactionSubtypeRepository;
 import com.banquito.core.service.IAccountService;
 import com.banquito.core.service.IAuthenticationService;
+import com.banquito.core.service.IEmailService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -48,6 +49,7 @@ public class AccountService implements IAccountService {
     private final AccountTransactionRepository transactionRepository;
     private final TransactionSubtypeRepository transactionSubtypeRepository;
     private final IAuthenticationService authenticationService;
+    private final IEmailService emailService;
 
     @Transactional(readOnly = true)
     @Override
@@ -81,18 +83,27 @@ public class AccountService implements IAccountService {
                 .collect(Collectors.toList());
     }
 
-     public AccountResponseDTO create(AccountRequestDTO request, Integer coreUserId) {
+    @Transactional
+    @Override
+    public AccountResponseDTO create(AccountRequestDTO request, Integer coreUserId) {
         authenticationService.validateActiveCoreUser(coreUserId);
         validateAccountRequest(request);
 
         Customer customer = customerRepository.findById(request.getCustomerId())
                 .orElseThrow(() -> new RuntimeException("Cliente no encontrado: " + request.getCustomerId()));
+
         Branch branch = branchRepository.findById(request.getBranchId())
                 .orElseThrow(() -> new RuntimeException("Sucursal no encontrada: " + request.getBranchId()));
+
         AccountSubtype subtype = accountSubtypeRepository.findById(request.getAccountSubtypeId())
                 .orElseThrow(() -> new RuntimeException("Subtipo no encontrado: " + request.getAccountSubtypeId()));
 
-        BigDecimal initialBalance = request.getInitialBalance() != null ? request.getInitialBalance() : BigDecimal.ZERO;
+        validateAccountSubtype(subtype);
+
+        BigDecimal initialBalance = request.getInitialBalance() != null
+                ? request.getInitialBalance()
+                : BigDecimal.ZERO;
+
         if (initialBalance.compareTo(BigDecimal.ZERO) < 0) {
             throw new IllegalArgumentException("El saldo inicial no puede ser negativo");
         }
@@ -105,8 +116,8 @@ public class AccountService implements IAccountService {
                     });
         }
 
-
         LocalDateTime now = LocalDateTime.now();
+
         Account account = new Account();
         account.setAccountNumber(resolveAccountNumber(request.getAccountNumber(), branch));
         account.setCustomer(customer);
@@ -119,8 +130,30 @@ public class AccountService implements IAccountService {
         account.setOpeningDate(now);
         account.setLastUpdate(now);
 
-        log.info("CoreUser {} crea cuenta {}", coreUserId, account.getAccountNumber());
-        return toResponse(accountRepository.save(account));
+        Account savedAccount = accountRepository.save(account);
+
+        if (initialBalance.compareTo(BigDecimal.ZERO) > 0) {
+            registerTransaction(
+                    savedAccount,
+                    initialBalance,
+                    MovementTypeEnum.CREDITO,
+                    savedAccount.getAvailableBalance(),
+                    "OPEN" + savedAccount.getAccountNumber(),
+                    "DEPOSIT"
+            );
+        } else {
+            registerTransaction(
+                    savedAccount,
+                    BigDecimal.ZERO,
+                    MovementTypeEnum.CREDITO,
+                    savedAccount.getAvailableBalance(),
+                    "OPEN" + savedAccount.getAccountNumber(),
+                    "TRN-GEN"
+            );
+        }
+
+        log.info("CoreUser {} crea cuenta {}", coreUserId, savedAccount.getAccountNumber());
+        return toResponse(savedAccount);
     }
 
     @Transactional
@@ -141,14 +174,36 @@ public class AccountService implements IAccountService {
         return changeStatus(accountNumber, AccountStatusEnum.SUSPENDIDO, coreUserId);
     }
 
+    @Transactional
+    @Override
+    public AccountResponseDTO activate(String accountNumber, Integer coreUserId) {
+        return changeStatus(accountNumber, AccountStatusEnum.ACTIVO, coreUserId);
+    }
+
     private AccountResponseDTO changeStatus(String accountNumber, AccountStatusEnum status, Integer coreUserId) {
         authenticationService.validateActiveCoreUser(coreUserId);
+
         Account account = accountRepository.findByAccountNumber(accountNumber)
                 .orElseThrow(() -> new AccountNotFoundException(accountNumber));
+
         account.setStatus(status);
         account.setLastUpdate(LocalDateTime.now());
+
+        Account savedAccount = accountRepository.save(account);
+
         log.info("CoreUser {} cambia cuenta {} a {}", coreUserId, accountNumber, status);
-        return toResponse(accountRepository.save(account));
+
+        if (status == AccountStatusEnum.BLOQUEADO || status == AccountStatusEnum.SUSPENDIDO) {
+            String email = savedAccount.getCustomer().getEmail();
+
+            if (email != null && !email.isBlank()) {
+                emailService.sendStatusChangeEmail(email, savedAccount.getAccountNumber(), status.name());
+            } else {
+                log.warn("El cliente de la cuenta {} no tiene un email registrado para notificar.", accountNumber);
+            }
+        }
+
+        return toResponse(savedAccount);
     }
 
     @Transactional(readOnly = true)
@@ -156,6 +211,7 @@ public class AccountService implements IAccountService {
     public BalanceDTO getBalance(String accountNumber) {
         Account account = accountRepository.findByAccountNumber(accountNumber)
                 .orElseThrow(() -> new AccountNotFoundException(accountNumber));
+
         return new BalanceDTO(
                 account.getAccountNumber(),
                 account.getAccountingBalance(),
@@ -168,12 +224,14 @@ public class AccountService implements IAccountService {
     @Override
     public TransactionResponseDTO debit(String accountNumber, BigDecimal amount) {
         validateAmount(amount);
+
         Account account = accountRepository.findByAccountNumber(accountNumber)
                 .orElseThrow(() -> new AccountNotFoundException(accountNumber));
 
         if (account.getStatus() != AccountStatusEnum.ACTIVO) {
             throw new InactiveAccountException(accountNumber);
         }
+
         if (account.getAvailableBalance().compareTo(amount) < 0) {
             throw new InsufficientBalanceException(accountNumber);
         }
@@ -181,10 +239,20 @@ public class AccountService implements IAccountService {
         account.setAvailableBalance(account.getAvailableBalance().subtract(amount));
         account.setAccountingBalance(account.getAccountingBalance().subtract(amount));
         account.setLastUpdate(LocalDateTime.now());
+
         accountRepository.save(account);
 
         String uuid = generateTransactionUuid();
-        AccountTransaction transaction = registerTransaction(account, amount, MovementTypeEnum.DEBITO, account.getAvailableBalance(), uuid, "RETIRO_ATM");
+
+        AccountTransaction transaction = registerTransaction(
+                account,
+                amount,
+                MovementTypeEnum.DEBITO,
+                account.getAvailableBalance(),
+                uuid,
+                "ATM_WITHDRAW"
+        );
+
         return toTransactionResponse(transaction, accountNumber, "Debito realizado exitosamente");
     }
 
@@ -192,6 +260,7 @@ public class AccountService implements IAccountService {
     @Override
     public TransactionResponseDTO credit(String accountNumber, BigDecimal amount) {
         validateAmount(amount);
+
         Account account = accountRepository.findByAccountNumber(accountNumber)
                 .orElseThrow(() -> new AccountNotFoundException(accountNumber));
 
@@ -202,10 +271,20 @@ public class AccountService implements IAccountService {
         account.setAvailableBalance(account.getAvailableBalance().add(amount));
         account.setAccountingBalance(account.getAccountingBalance().add(amount));
         account.setLastUpdate(LocalDateTime.now());
+
         accountRepository.save(account);
 
         String uuid = generateTransactionUuid();
-        AccountTransaction transaction = registerTransaction(account, amount, MovementTypeEnum.CREDITO, account.getAvailableBalance(), uuid, "DEPOSITO");
+
+        AccountTransaction transaction = registerTransaction(
+                account,
+                amount,
+                MovementTypeEnum.CREDITO,
+                account.getAvailableBalance(),
+                uuid,
+                "DEPOSIT"
+        );
+
         return toTransactionResponse(transaction, accountNumber, "Credito realizado exitosamente");
     }
 
@@ -213,15 +292,18 @@ public class AccountService implements IAccountService {
     @Override
     public TransactionResponseDTO transfer(String origin, String destination, BigDecimal amount, String uuid) {
         validateAmount(amount);
+
         if (origin == null || origin.isBlank() || destination == null || destination.isBlank()) {
             throw new IllegalArgumentException("Las cuentas origen y destino son obligatorias");
         }
+
         if (origin.equals(destination)) {
             throw new IllegalArgumentException("La cuenta origen y destino no pueden ser iguales");
         }
 
         Account originAccount = accountRepository.findByAccountNumber(origin)
                 .orElseThrow(() -> new AccountNotFoundException(origin));
+
         Account destinationAccount = accountRepository.findByAccountNumber(destination)
                 .orElseThrow(() -> new AccountNotFoundException(destination));
 
@@ -230,9 +312,11 @@ public class AccountService implements IAccountService {
         if (originAccount.getStatus() != AccountStatusEnum.ACTIVO) {
             throw new InactiveAccountException(origin);
         }
+
         if (destinationAccount.getStatus() == AccountStatusEnum.SUSPENDIDO) {
             throw new InactiveAccountException(destination);
         }
+
         if (originAccount.getAvailableBalance().compareTo(amount) < 0) {
             throw new InsufficientBalanceException(origin);
         }
@@ -240,15 +324,32 @@ public class AccountService implements IAccountService {
         originAccount.setAvailableBalance(originAccount.getAvailableBalance().subtract(amount));
         originAccount.setAccountingBalance(originAccount.getAccountingBalance().subtract(amount));
         originAccount.setLastUpdate(LocalDateTime.now());
+
         accountRepository.save(originAccount);
 
         destinationAccount.setAvailableBalance(destinationAccount.getAvailableBalance().add(amount));
         destinationAccount.setAccountingBalance(destinationAccount.getAccountingBalance().add(amount));
         destinationAccount.setLastUpdate(LocalDateTime.now());
+
         accountRepository.save(destinationAccount);
 
-        AccountTransaction originTransaction = registerTransaction(originAccount, amount, MovementTypeEnum.DEBITO, originAccount.getAvailableBalance(), uuid, "TRANSFER");
-        registerTransaction(destinationAccount, amount, MovementTypeEnum.CREDITO, destinationAccount.getAvailableBalance(), uuid, "TRANSFER");
+        AccountTransaction originTransaction = registerTransaction(
+                originAccount,
+                amount,
+                MovementTypeEnum.DEBITO,
+                originAccount.getAvailableBalance(),
+                uuid,
+                "TRANSFER"
+        );
+
+        registerTransaction(
+                destinationAccount,
+                amount,
+                MovementTypeEnum.CREDITO,
+                destinationAccount.getAvailableBalance(),
+                uuid,
+                "TRANSFER"
+        );
 
         return toTransactionResponse(originTransaction, origin, "Transferencia realizada exitosamente");
     }
@@ -256,9 +357,11 @@ public class AccountService implements IAccountService {
     private AccountTransaction registerTransaction(Account account, BigDecimal amount, MovementTypeEnum type,
                                                    BigDecimal resultingBalance, String uuid, String subtypeCode) {
         validateUuid(uuid);
+
         if (subtypeCode == null || subtypeCode.isBlank()) {
             throw new IllegalArgumentException("El subtipo de transaccion es obligatorio");
         }
+
         AccountTransaction transaction = new AccountTransaction();
         transaction.setAccount(account);
         transaction.setMovementType(type);
@@ -269,10 +372,13 @@ public class AccountService implements IAccountService {
         transaction.setTransactionDate(LocalDateTime.now());
         transaction.setTransactionSubtype(transactionSubtypeRepository.findByCode(subtypeCode)
                 .orElseThrow(() -> new RuntimeException("Subtipo de transaccion no configurado: " + subtypeCode)));
+
         if (transaction.getTransactionSubtype().getStatus() != CommonStatusEnum.ACTIVO) {
             throw new IllegalArgumentException("El subtipo de transaccion no esta activo");
         }
+
         transaction.setDescription(transaction.getTransactionSubtype().getName());
+
         return transactionRepository.save(transaction);
     }
 
@@ -295,22 +401,26 @@ public class AccountService implements IAccountService {
         if (request == null) {
             throw new IllegalArgumentException("La solicitud de cuenta es obligatoria");
         }
+
         if (request.getCustomerId() == null) {
             throw new IllegalArgumentException("El titular de la cuenta es obligatorio");
         }
+
         if (request.getBranchId() == null) {
             throw new IllegalArgumentException("La sucursal de la cuenta es obligatoria");
         }
+
         if (request.getAccountSubtypeId() == null) {
             throw new IllegalArgumentException("El subtipo de cuenta es obligatorio");
         }
+
         if (request.getInitialBalance() != null && request.getInitialBalance().compareTo(BigDecimal.ZERO) < 0) {
             throw new IllegalArgumentException("El saldo inicial no puede ser negativo");
         }
     }
 
     private void validateAccountSubtype(AccountSubtype subtype) {
-        if (!"ACTIVO".equals(subtype.getStatus())) {
+        if (subtype.getStatus() != CommonStatusEnum.ACTIVO) {
             throw new IllegalArgumentException("El subtipo de cuenta no esta activo");
         }
     }
@@ -323,6 +433,7 @@ public class AccountService implements IAccountService {
 
     private void validateIdempotency(Account account, String uuid) {
         validateUuid(uuid);
+
         LocalDateTime startOfDay = LocalDateTime.now().toLocalDate().atStartOfDay();
         LocalDateTime endOfDay = startOfDay.plusDays(1);
 
@@ -333,19 +444,21 @@ public class AccountService implements IAccountService {
     }
 
     private String resolveAccountNumber(String requestedAccountNumber, Branch branch) {
-        if (requestedAccountNumber != null && !requestedAccountNumber.isBlank()) {
-            if (!requestedAccountNumber.startsWith(branch.getBranchCode() + "-")) {
-                throw new IllegalArgumentException("El numero de cuenta debe iniciar con el codigo de la sucursal");
-            }
-            return requestedAccountNumber;
-        }
-        return branch.getBranchCode() + "-" + UUID.randomUUID().toString().replace("-", "").substring(0, 9).toUpperCase();
+        String accountNumber;
+
+        do {
+            accountNumber = branch.getBranchCode()
+                    + UUID.randomUUID().toString().replace("-", "").substring(0, 7).toUpperCase();
+        } while (accountRepository.findByAccountNumber(accountNumber).isPresent());
+
+        return accountNumber;
     }
 
     private void validateUuid(String uuid) {
         if (uuid == null || uuid.isBlank()) {
             throw new IllegalArgumentException("El UUID de transaccion es obligatorio");
         }
+
         if (uuid.length() > 35) {
             throw new IllegalArgumentException("El UUID de transaccion no debe superar 35 caracteres");
         }
@@ -355,7 +468,9 @@ public class AccountService implements IAccountService {
     @Override
     public AccountResponseDTO getFavoriteAccount(Integer customerId) {
         Account account = accountRepository.findByCustomer_IdAndIsFavoriteTrue(customerId)
-                .orElseThrow(() -> new AccountNotFoundException("No se encontró cuenta favorita para el cliente ID: " + customerId));
+                .orElseThrow(() -> new AccountNotFoundException(
+                        "No se encontró cuenta favorita para el cliente ID: " + customerId));
+
         return toResponse(account);
     }
 
@@ -369,7 +484,7 @@ public class AccountService implements IAccountService {
             throw new IllegalArgumentException("La cuenta no pertenece al cliente especificado.");
         }
 
-        if (newFavorite.getStatus() != com.banquito.core.enums.AccountStatusEnum.ACTIVO) {
+        if (newFavorite.getStatus() != AccountStatusEnum.ACTIVO) {
             throw new IllegalStateException("Solo se puede marcar como favorita una cuenta en estado ACTIVO.");
         }
 
@@ -380,7 +495,9 @@ public class AccountService implements IAccountService {
                 });
 
         newFavorite.setIsFavorite(true);
+
         log.info("Cliente {} cambió su cuenta favorita a {}", customerId, accountNumber);
+
         return toResponse(accountRepository.save(newFavorite));
     }
 
@@ -390,6 +507,7 @@ public class AccountService implements IAccountService {
 
     private AccountResponseDTO toResponse(Account account) {
         String customerName = resolveCustomerName(account.getCustomer());
+
         return new AccountResponseDTO(
                 account.getId(),
                 account.getAccountNumber(),
@@ -408,6 +526,7 @@ public class AccountService implements IAccountService {
         if (customer.getLegalName() != null && !customer.getLegalName().isBlank()) {
             return customer.getLegalName();
         }
+
         return ((customer.getFirstName() != null ? customer.getFirstName() : "") + " " +
                 (customer.getLastName() != null ? customer.getLastName() : "")).trim();
     }

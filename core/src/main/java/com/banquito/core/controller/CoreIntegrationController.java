@@ -11,6 +11,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.banquito.core.integration.CoreSwitchService;
+import com.banquito.core.dto.CoreParameterResponseDTO;
+import com.banquito.core.repository.CoreParameterRepository;
 
 import lombok.RequiredArgsConstructor;
 

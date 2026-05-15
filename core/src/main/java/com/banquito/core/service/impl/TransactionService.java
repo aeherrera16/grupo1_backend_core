@@ -1,6 +1,7 @@
 package com.banquito.core.service.impl;
 
 import com.banquito.core.dto.TransactionResponseDTO;
+import com.banquito.core.dto.TransactionHistoryDTO;
 import com.banquito.core.enums.AccountStatusEnum;
 import com.banquito.core.enums.CommonStatusEnum;
 import com.banquito.core.enums.MovementTypeEnum;
@@ -24,6 +25,8 @@ import java.util.List;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -116,19 +119,6 @@ public class TransactionService implements ITransactionService {
         return toResponse(debit, "Transferencia procesada correctamente");
     }
 
-    @Override
-    @Transactional(readOnly = true)
-    public List<TransactionResponseDTO> getLatestTransactions(String accountNumber) {
-        Account account = accountRepository.findByAccountNumber(accountNumber)
-                .orElseThrow(() -> new AccountNotFoundException(accountNumber));
-
-        List<AccountTransaction> transactions = transactionRepository
-                .findTop10ByAccount_IdOrderByTransactionDateDesc(account.getId());
-
-        return transactions.stream()
-                .map(t -> toResponse(t, "Consulta de movimiento exitosa"))
-                .toList();
-    }
 
     private void validateUuid(String uuid) {
         if (uuid == null || uuid.isBlank()) {
@@ -247,5 +237,25 @@ public class TransactionService implements ITransactionService {
                 transaction.getStatus(),
                 message
         );
+    }
+
+    @Override
+    public List<TransactionHistoryDTO> getTransactionHistory(String accountNumber) {
+        Account account = accountRepository.findByAccountNumber(accountNumber)
+                .orElseThrow(() -> new AccountNotFoundException(accountNumber));
+
+        return transactionRepository.findTop10ByAccount_IdOrderByTransactionDateDesc(account.getId())
+                .stream()
+                .map(transaction -> new TransactionHistoryDTO(
+                        transaction.getId(),
+                        transaction.getTransactionDate(),
+                        transaction.getMovementType(),
+                        transaction.getTransactionSubtype().getCode(),
+                        transaction.getTransactionSubtype().getName(),
+                        transaction.getDescription(),
+                        transaction.getAmount(),
+                        transaction.getResultingBalance()
+                ))
+                .collect(Collectors.toList());
     }
 }

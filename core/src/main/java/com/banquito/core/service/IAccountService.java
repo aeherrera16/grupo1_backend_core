@@ -24,6 +24,8 @@ public interface IAccountService {
 
     AccountResponseDTO suspend(String accountNumber, Integer coreUserId);
 
+    AccountResponseDTO activate(String accountNumber, Integer coreUserId);
+
     BalanceDTO getBalance(String accountNumber);
 
     TransactionResponseDTO debit(String accountNumber, BigDecimal amount);
