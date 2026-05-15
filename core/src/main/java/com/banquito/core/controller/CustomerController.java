@@ -19,11 +19,6 @@ public class CustomerController {
 
     private final ICustomerService customerService;
 
-    @GetMapping
-    public ResponseEntity<List<CustomerResponseDTO>> findAll() {
-        return ResponseEntity.ok(customerService.findAll());
-    }
-
     @GetMapping("/{id}")
     public ResponseEntity<CustomerResponseDTO> findById(@PathVariable Integer id) {
         return ResponseEntity.ok(customerService.findById(id));

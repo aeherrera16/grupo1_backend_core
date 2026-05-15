@@ -175,9 +175,6 @@ public class CoreSwitchServiceImpl implements CoreSwitchService {
             validateActiveCompanyAccount(companyAccount, companyAccountNumber);
             validateCommissionIdempotency(companyAccount.getId(), uuid);
 
-            if (companyAccount.getAvailableBalance().compareTo(totalAmount) < 0) {
-                throw new IllegalArgumentException("Saldo insuficiente para cobrar la comision");
-            }
             TransactionSubtype subtype = getActiveSubtype("COMISION");
 
             companyAccount.setAvailableBalance(companyAccount.getAvailableBalance().subtract(totalAmount));
