@@ -1,5 +1,7 @@
 package com.banquito.core.config;
 
+import com.banquito.core.enums.MovementTypeEnum;
+import com.banquito.core.enums.TransactionStatusEnum;
 import com.banquito.core.enums.AccountStatusEnum;
 import com.banquito.core.enums.CommonStatusEnum;
 import com.banquito.core.enums.CustomerStatusEnum;
@@ -30,6 +32,7 @@ public class DataInitializer implements CommandLineRunner {
     private final CoreParameterRepository coreParameterRepository;
     private final CustomerRepository customerRepository;
     private final AccountRepository accountRepository;
+    private final AccountTransactionRepository transactionRepository;
     private final InstitutionalAccountRepository institutionalAccountRepository;
     private final CoreUserRepository coreUserRepository;
     private final PasswordEncoder passwordEncoder;
@@ -380,6 +383,8 @@ public class DataInitializer implements CommandLineRunner {
                 );
                 customer.setMobilePhone("09" + String.format("%08d", naturalIndex));
                 customer.setAddress("Quito, sector " + ((naturalIndex % 5) + 1));
+                customer.setLatitude(generateLatitude(naturalIndex));
+                customer.setLongitude(generateLongitude(naturalIndex));
                 customer.setStatus(CustomerStatusEnum.ACTIVO);
 
                 customerRepository.save(customer);
@@ -434,6 +439,8 @@ public class DataInitializer implements CommandLineRunner {
                 company.setEmail("contacto.empresa" + corporateIndex + "@banquito.com");
                 company.setMobilePhone("02" + String.format("%07d", corporateIndex));
                 company.setAddress("Quito, oficina corporativa " + corporateIndex);
+                company.setLatitude(generateLatitude(corporateIndex + 500));
+                company.setLongitude(generateLongitude(corporateIndex + 500));
                 company.setStatus(CustomerStatusEnum.ACTIVO);
 
                 customerRepository.save(company);
@@ -534,23 +541,43 @@ public class DataInitializer implements CommandLineRunner {
             accountNumber = generateSeedAccountNumber(branch, sequence);
         }
 
+        BigDecimal initialBalance = new BigDecimal("1000.00");
+        LocalDateTime now = LocalDateTime.now();
+
         Account account = new Account();
         account.setAccountNumber(accountNumber);
         account.setCustomer(customer);
         account.setBranch(branch);
         account.setAccountSubtype(subtype);
         account.setStatus(AccountStatusEnum.ACTIVO);
-        account.setAccountingBalance(new BigDecimal("1000.00"));
-        account.setAvailableBalance(new BigDecimal("1000.00"));
+        account.setAccountingBalance(initialBalance);
+        account.setAvailableBalance(initialBalance);
         account.setIsFavorite(false);
-        account.setOpeningDate(LocalDateTime.now());
-        account.setLastUpdate(LocalDateTime.now());
+        account.setOpeningDate(now);
+        account.setLastUpdate(now);
 
-        accountRepository.save(account);
+        Account savedAccount = accountRepository.save(account);
+        registerOpeningTransaction(savedAccount, initialBalance);
     }
+    private void registerOpeningTransaction(Account account, BigDecimal amount) {
+        TransactionSubtype subtype = transactionSubtypeRepository.findByCode("DEPOSIT")
+                .orElseThrow(() -> new IllegalStateException("Subtipo DEPOSIT no encontrado"));
 
+        AccountTransaction transaction = new AccountTransaction();
+        transaction.setAccount(account);
+        transaction.setTransactionSubtype(subtype);
+        transaction.setTransactionUuid("OPEN" + account.getAccountNumber());
+        transaction.setMovementType(MovementTypeEnum.CREDITO);
+        transaction.setAmount(amount);
+        transaction.setResultingBalance(account.getAccountingBalance());
+        transaction.setStatus(TransactionStatusEnum.COMPLETADA);
+        transaction.setDescription("Apertura de cuenta con saldo inicial");
+        transaction.setTransactionDate(LocalDateTime.now());
+
+        transactionRepository.save(transaction);
+    }
     private String generateSeedAccountNumber(Branch branch, int sequence) {
-        return branch.getBranchCode() + "-" + String.format("%07d", sequence);
+        return branch.getBranchCode() + String.format("%07d", sequence);
     }
 
     private String generateEcuadorianCedula(int index) {
@@ -585,5 +612,17 @@ public class DataInitializer implements CommandLineRunner {
 
     private String generateCompanyRuc(int index) {
         return "179" + String.format("%07d", index) + "001";
+    }
+
+    private BigDecimal generateLatitude(int index) {
+        BigDecimal baseLatitude = new BigDecimal("-0.180653");
+        BigDecimal variation = new BigDecimal(index % 100).divide(new BigDecimal("10000"));
+        return baseLatitude.add(variation);
+    }
+
+    private BigDecimal generateLongitude(int index) {
+        BigDecimal baseLongitude = new BigDecimal("-78.467834");
+        BigDecimal variation = new BigDecimal(index % 100).divide(new BigDecimal("10000"));
+        return baseLongitude.subtract(variation);
     }
 }
