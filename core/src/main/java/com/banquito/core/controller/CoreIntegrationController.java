@@ -1,5 +1,7 @@
 package com.banquito.core.controller;
 
+import com.banquito.core.dto.*;
+import com.banquito.core.repository.CoreParameterRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -8,10 +10,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.banquito.core.dto.BalanceDTO;
-import com.banquito.core.dto.TransactionRequestDTO;
-import com.banquito.core.dto.TransferRequestDTO;
-import com.banquito.core.dto.TransferResultDTO;
 import com.banquito.core.integration.CoreSwitchService;
 
 import lombok.RequiredArgsConstructor;
