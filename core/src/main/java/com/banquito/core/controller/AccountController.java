@@ -5,13 +5,11 @@ import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -25,55 +23,46 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @RestController
-@CrossOrigin(origins = {"http://localhost:5173", "http://localhost:5174", "http://127.0.0.1:5173", "http://127.0.0.1:5174"})
 @RequestMapping("/core/v1/accounts")
 @RequiredArgsConstructor
 public class AccountController {
-
-    private static final String CORE_USER_HEADER = "X-Core-User-Id";
 
     private final IAccountService accountService;
 
     @GetMapping("/customer/{customerId}")
     public ResponseEntity<List<AccountResponseDTO>> findByCustomerId(
-            @PathVariable Integer customerId,
-            @RequestHeader(CORE_USER_HEADER) Integer coreUserId) {
-        return ResponseEntity.ok(accountService.findByCustomerId(customerId, coreUserId));
+            @PathVariable Integer customerId) {
+        return ResponseEntity.ok(accountService.findByCustomerId(customerId, 1));
     }
 
     @GetMapping("/{accountNumber}")
     public ResponseEntity<AccountResponseDTO> findByAccountNumber(
-            @PathVariable String accountNumber,
-            @RequestHeader(CORE_USER_HEADER) Integer coreUserId) {
-        return ResponseEntity.ok(accountService.findByAccountNumber(accountNumber, coreUserId));
+            @PathVariable String accountNumber) {
+        return ResponseEntity.ok(accountService.findByAccountNumber(accountNumber, 1));
     }
 
     @PostMapping
     public ResponseEntity<AccountResponseDTO> create(
-            @RequestBody AccountRequestDTO request,
-            @RequestHeader(CORE_USER_HEADER) Integer coreUserId) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(accountService.create(request, coreUserId));
+            @RequestBody AccountRequestDTO request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(accountService.create(request, 1));
     }
 
     @PatchMapping("/{accountNumber}/inactivate")
     public ResponseEntity<AccountResponseDTO> inactivate(
-            @PathVariable String accountNumber,
-            @RequestHeader(CORE_USER_HEADER) Integer coreUserId) {
-        return ResponseEntity.ok(accountService.inactivate(accountNumber, coreUserId));
+            @PathVariable String accountNumber) {
+        return ResponseEntity.ok(accountService.inactivate(accountNumber, 1));
     }
 
     @PatchMapping("/{accountNumber}/block")
     public ResponseEntity<AccountResponseDTO> block(
-            @PathVariable String accountNumber,
-            @RequestHeader(CORE_USER_HEADER) Integer coreUserId) {
-        return ResponseEntity.ok(accountService.block(accountNumber, coreUserId));
+            @PathVariable String accountNumber) {
+        return ResponseEntity.ok(accountService.block(accountNumber, 1));
     }
 
     @PatchMapping("/{accountNumber}/suspend")
     public ResponseEntity<AccountResponseDTO> suspend(
-            @PathVariable String accountNumber,
-            @RequestHeader(CORE_USER_HEADER) Integer coreUserId) {
-        return ResponseEntity.ok(accountService.suspend(accountNumber, coreUserId));
+            @PathVariable String accountNumber) {
+        return ResponseEntity.ok(accountService.suspend(accountNumber, 1));
     }
 
     @PostMapping("/{accountNumber}/credit")

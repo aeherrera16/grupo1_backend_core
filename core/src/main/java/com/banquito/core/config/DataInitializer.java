@@ -93,6 +93,14 @@ public class DataInitializer implements CommandLineRunner {
         corriente.setDescription("Cuenta Corriente");
         corriente.setStatus(CommonStatusEnum.ACTIVO);
         accountSubtypeRepository.save(corriente);
+
+        AccountSubtype nomina = new AccountSubtype();
+        nomina.setSuperType("PASIVO");
+        nomina.setCode("NOM");
+        nomina.setName("Nómina");
+        nomina.setDescription("Cuenta de Nómina");
+        nomina.setStatus(CommonStatusEnum.ACTIVO);
+        accountSubtypeRepository.save(nomina);
         log.info("AccountSubtypes creados");
     }
 
