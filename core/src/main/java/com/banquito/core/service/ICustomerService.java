@@ -14,4 +14,6 @@ public interface ICustomerService {
     CustomerResponseDTO create(CustomerRequestDTO request);
 
     CustomerResponseDTO update(Integer id, CustomerRequestDTO request);
+
+    CustomerResponseDTO updateStatus(Integer id, String status);
 }

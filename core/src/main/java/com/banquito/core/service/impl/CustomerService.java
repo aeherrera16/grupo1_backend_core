@@ -16,7 +16,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Slf4j
 @Service
@@ -97,6 +96,24 @@ public class CustomerService implements ICustomerService {
         }
 
         log.info("Actualizando datos del cliente con ID: {}", id);
+        return toResponse(customerRepository.save(customer));
+    }
+
+    @Transactional
+    @Override
+    public CustomerResponseDTO updateStatus(Integer id, String status) {
+        Customer customer = customerRepository.findById(id)
+                .orElseThrow(() -> new CustomerNotFoundException(String.valueOf(id)));
+
+        CustomerStatusEnum newStatus;
+        try {
+            newStatus = CustomerStatusEnum.valueOf(status.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Estado no válido: " + status + ". Valores permitidos: ACTIVO, INACTIVO, SUSPENDIDO");
+        }
+
+        customer.setStatus(newStatus);
+        log.info("Actualizando estado del cliente ID {} a {}", id, newStatus);
         return toResponse(customerRepository.save(customer));
     }
 
