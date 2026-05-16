@@ -35,6 +35,7 @@ public class DataInitializer implements CommandLineRunner {
     private final AccountTransactionRepository transactionRepository;
     private final InstitutionalAccountRepository institutionalAccountRepository;
     private final CoreUserRepository coreUserRepository;
+    private final WebCredentialRepository webCredentialRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Override
@@ -52,6 +53,7 @@ public class DataInitializer implements CommandLineRunner {
 
         initMassiveCustomers();
         initMassiveAccounts();
+        initWebCredentials();
 
         log.info("Datos de prueba cargados correctamente");
     }
@@ -336,6 +338,41 @@ public class DataInitializer implements CommandLineRunner {
 
         CoreUser saved = coreUserRepository.save(admin);
         log.info("CoreUsers creados con ID: {}", saved.getId());
+    }
+
+    private void initWebCredentials() {
+        List<Customer> naturalCustomers = customerRepository.findAll().stream()
+                .filter(c -> CustomerTypeEnum.NATURAL.equals(c.getCustomerType()))
+                .limit(10)
+                .toList();
+
+        if (naturalCustomers.isEmpty()) {
+            log.info("No existen clientes naturales para crear credenciales web");
+            return;
+        }
+
+        String defaultPasswordHash = passwordEncoder.encode("Password123");
+        int sequence = 1;
+
+        for (Customer customer : naturalCustomers) {
+            String username = "cliente." + String.format("%03d", sequence++);
+
+            if (webCredentialRepository.findByUsername(username).isPresent()
+                    || webCredentialRepository.findByCustomer_Id(customer.getId()).isPresent()) {
+                continue;
+            }
+
+            WebCredential credential = new WebCredential();
+            credential.setCustomer(customer);
+            credential.setUsername(username);
+            credential.setPasswordHash(defaultPasswordHash);
+            credential.setStatus(CommonStatusEnum.ACTIVO);
+            credential.setCreationDate(LocalDateTime.now());
+
+            webCredentialRepository.save(credential);
+        }
+
+        log.info("WebCredentials creadas o verificadas");
     }
 
     private void initMassiveCustomers() {
