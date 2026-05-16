@@ -12,11 +12,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.banquito.core.repository.HolidayRepository;
 
-/**
- * Endpoints de calendario laboral basados en la tabla HOLIDAY del core.
- */
+
 @RestController
-@RequestMapping("/api/holidays")
+@RequestMapping("/core/v1/holidays")
 public class HolidayController {
 
     private final HolidayRepository holidayRepository;
@@ -25,13 +23,6 @@ public class HolidayController {
         this.holidayRepository = holidayRepository;
     }
 
-    /**
-     * Retorna si una fecha es día hábil.
-     *
-     * Regla:
-     * - No hábil si es sábado/domingo
-     * - No hábil si existe en la tabla HOLIDAY (feriado o registro especial)
-     */
     @GetMapping("/is-business-day")
     public Map<String, Object> isBusinessDay(
             @RequestParam("date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
