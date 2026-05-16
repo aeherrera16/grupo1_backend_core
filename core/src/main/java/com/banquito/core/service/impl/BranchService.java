@@ -40,6 +40,7 @@ public class BranchService implements IBranchService {
         branch.setBranchCode(request.getBranchCode());
         branch.setName(request.getName());
         branch.setCity(request.getCity());
+        branch.setCreationDate(java.time.LocalDateTime.now());
 
         log.info("Creando sucursal con código: {}", branch.getBranchCode());
         return toResponse(branchRepository.save(branch));
@@ -50,7 +51,8 @@ public class BranchService implements IBranchService {
                 branch.getId(),
                 branch.getBranchCode(),
                 branch.getName(),
-                branch.getCity()
+                branch.getCity(),
+                branch.getCreationDate()
         );
     }
 }

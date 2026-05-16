@@ -68,6 +68,16 @@ public class DataInitializer implements CommandLineRunner {
         }
 
         if (customerSubtypeRepository.findAll().stream()
+                .noneMatch(s -> "EMPRESA".equals(s.getName()))) {
+            CustomerSubtype empresa = new CustomerSubtype();
+            empresa.setCustomerType("JURIDICO");
+            empresa.setName("EMPRESA");
+            empresa.setDescription("Empresa sin servicio de pagos masivos");
+            empresa.setStatus(CustomerSubtypeStatusEnum.ACTIVO);
+            customerSubtypeRepository.save(empresa);
+        }
+
+        if (customerSubtypeRepository.findAll().stream()
                 .noneMatch(s -> "EMPRESA_PAGOS_MASIVOS".equals(s.getName()))) {
             CustomerSubtype empresaPagosMasivos = new CustomerSubtype();
             empresaPagosMasivos.setCustomerType("JURIDICO");
