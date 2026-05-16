@@ -35,6 +35,7 @@ public class DataInitializer implements CommandLineRunner {
     private final AccountTransactionRepository transactionRepository;
     private final InstitutionalAccountRepository institutionalAccountRepository;
     private final CoreUserRepository coreUserRepository;
+    private final WebCredentialRepository webCredentialRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Override
@@ -52,6 +53,7 @@ public class DataInitializer implements CommandLineRunner {
 
         initMassiveCustomers();
         initMassiveAccounts();
+        initWebCredentials();
 
         log.info("Datos de prueba cargados correctamente");
     }
@@ -338,6 +340,41 @@ public class DataInitializer implements CommandLineRunner {
         log.info("CoreUsers creados con ID: {}", saved.getId());
     }
 
+    private void initWebCredentials() {
+        List<Customer> naturalCustomers = customerRepository.findAll().stream()
+                .filter(c -> CustomerTypeEnum.NATURAL.equals(c.getCustomerType()))
+                .limit(10)
+                .toList();
+
+        if (naturalCustomers.isEmpty()) {
+            log.info("No existen clientes naturales para crear credenciales web");
+            return;
+        }
+
+        String defaultPasswordHash = passwordEncoder.encode("Password123");
+        int sequence = 1;
+
+        for (Customer customer : naturalCustomers) {
+            String username = "cliente." + String.format("%03d", sequence++);
+
+            if (webCredentialRepository.findByUsername(username).isPresent()
+                    || webCredentialRepository.findByCustomer_Id(customer.getId()).isPresent()) {
+                continue;
+            }
+
+            WebCredential credential = new WebCredential();
+            credential.setCustomer(customer);
+            credential.setUsername(username);
+            credential.setPasswordHash(defaultPasswordHash);
+            credential.setStatus(CommonStatusEnum.ACTIVO);
+            credential.setCreationDate(LocalDateTime.now());
+
+            webCredentialRepository.save(credential);
+        }
+
+        log.info("WebCredentials creadas o verificadas");
+    }
+
     private void initMassiveCustomers() {
         CustomerSubtype personal = customerSubtypeRepository.findAll().stream()
                 .filter(s -> "PERSONAL".equals(s.getName()))
@@ -395,6 +432,7 @@ public class DataInitializer implements CommandLineRunner {
                 customer.setAddress("Quito, sector " + ((naturalIndex % 5) + 1));
                 customer.setLatitude(generateLatitude(naturalIndex));
                 customer.setLongitude(generateLongitude(naturalIndex));
+                customer.setRegistrationDate(LocalDateTime.now());
                 customer.setStatus(CustomerStatusEnum.ACTIVO);
 
                 customerRepository.save(customer);
@@ -451,6 +489,7 @@ public class DataInitializer implements CommandLineRunner {
                 company.setAddress("Quito, oficina corporativa " + corporateIndex);
                 company.setLatitude(generateLatitude(corporateIndex + 500));
                 company.setLongitude(generateLongitude(corporateIndex + 500));
+                company.setRegistrationDate(LocalDateTime.now());
                 company.setStatus(CustomerStatusEnum.ACTIVO);
 
                 customerRepository.save(company);
@@ -560,13 +599,14 @@ public class DataInitializer implements CommandLineRunner {
         account.setBranch(branch);
         account.setAccountSubtype(subtype);
         account.setStatus(AccountStatusEnum.ACTIVO);
-        account.setAccountingBalance(new BigDecimal("1000.00"));
-        account.setAvailableBalance(new BigDecimal("1000.00"));
+        account.setAccountingBalance(initialBalance);
+        account.setAvailableBalance(initialBalance);
         account.setIsFavorite(false);
-        account.setOpeningDate(LocalDateTime.now());
-        account.setLastUpdate(LocalDateTime.now());
+        account.setOpeningDate(now);
+        account.setLastUpdate(now);
 
-        accountRepository.save(account);
+        Account savedAccount = accountRepository.save(account);
+        registerOpeningTransaction(savedAccount, initialBalance);
     }
     private void registerOpeningTransaction(Account account, BigDecimal amount) {
         TransactionSubtype subtype = transactionSubtypeRepository.findByCode("DEPOSIT")
@@ -586,7 +626,7 @@ public class DataInitializer implements CommandLineRunner {
         transactionRepository.save(transaction);
     }
     private String generateSeedAccountNumber(Branch branch, int sequence) {
-        return branch.getBranchCode() + "-" + String.format("%07d", sequence);
+        return branch.getBranchCode() + String.format("%07d", sequence);
     }
 
     private String generateEcuadorianCedula(int index) {
