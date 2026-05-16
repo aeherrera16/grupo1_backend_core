@@ -215,7 +215,8 @@ public class CustomerService implements ICustomerService {
                 customer.getEmail(),
                 customer.getMobilePhone(),
                 customer.getAddress(),
-                customer.getStatus()
+                customer.getStatus(),
+                customer.getLegalName()
         );
     }
 }

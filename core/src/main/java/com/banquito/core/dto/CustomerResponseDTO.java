@@ -19,13 +19,14 @@ public class CustomerResponseDTO {
     private String mobilePhone;
     private String address;
     private CustomerStatusEnum status;
+    private String legalName;
 
     public CustomerResponseDTO() {
     }
 
     public CustomerResponseDTO(Integer id, CustomerTypeEnum customerType, String identificationType,
                                String identification, String firstName, String lastName, String email,
-                               String mobilePhone, String address, CustomerStatusEnum status) {
+                               String mobilePhone, String address, CustomerStatusEnum status, String legalName) {
         this.id = id;
         this.customerType = customerType;
         this.identificationType = identificationType;
@@ -36,5 +37,6 @@ public class CustomerResponseDTO {
         this.mobilePhone = mobilePhone;
         this.address = address;
         this.status = status;
+        this.legalName = legalName;
     }
 }
