@@ -385,6 +385,7 @@ public class DataInitializer implements CommandLineRunner {
                 customer.setAddress("Quito, sector " + ((naturalIndex % 5) + 1));
                 customer.setLatitude(generateLatitude(naturalIndex));
                 customer.setLongitude(generateLongitude(naturalIndex));
+                customer.setRegistrationDate(LocalDateTime.now());
                 customer.setStatus(CustomerStatusEnum.ACTIVO);
 
                 customerRepository.save(customer);
@@ -441,6 +442,7 @@ public class DataInitializer implements CommandLineRunner {
                 company.setAddress("Quito, oficina corporativa " + corporateIndex);
                 company.setLatitude(generateLatitude(corporateIndex + 500));
                 company.setLongitude(generateLongitude(corporateIndex + 500));
+                company.setRegistrationDate(LocalDateTime.now());
                 company.setStatus(CustomerStatusEnum.ACTIVO);
 
                 customerRepository.save(company);
