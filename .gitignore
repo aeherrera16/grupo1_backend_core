@@ -32,7 +32,25 @@ build/
 ### VS Code ###
 .vscode/
 
+### Node / frontend packages ###
+node_modules/
+**/node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+*.log
+.sftp-host-keys/
+**/.sftp-host-keys/
+sftp-uploads/
+**/sftp-uploads/
+
 ### Environment variables ###
 .env
 *.env
 !.env.example
+
+
+#Excluir carpetas front y backend
+banca-web-switch/
+core/

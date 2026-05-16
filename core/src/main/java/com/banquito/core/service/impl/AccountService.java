@@ -116,6 +116,7 @@ public class AccountService implements IAccountService {
                     });
         }
 
+
         LocalDateTime now = LocalDateTime.now();
 
         Account account = new Account();
@@ -507,7 +508,6 @@ public class AccountService implements IAccountService {
 
     private AccountResponseDTO toResponse(Account account) {
         String customerName = resolveCustomerName(account.getCustomer());
-
         return new AccountResponseDTO(
                 account.getId(),
                 account.getAccountNumber(),

@@ -560,14 +560,13 @@ public class DataInitializer implements CommandLineRunner {
         account.setBranch(branch);
         account.setAccountSubtype(subtype);
         account.setStatus(AccountStatusEnum.ACTIVO);
-        account.setAccountingBalance(initialBalance);
-        account.setAvailableBalance(initialBalance);
+        account.setAccountingBalance(new BigDecimal("1000.00"));
+        account.setAvailableBalance(new BigDecimal("1000.00"));
         account.setIsFavorite(false);
-        account.setOpeningDate(now);
-        account.setLastUpdate(now);
+        account.setOpeningDate(LocalDateTime.now());
+        account.setLastUpdate(LocalDateTime.now());
 
-        Account savedAccount = accountRepository.save(account);
-        registerOpeningTransaction(savedAccount, initialBalance);
+        accountRepository.save(account);
     }
     private void registerOpeningTransaction(Account account, BigDecimal amount) {
         TransactionSubtype subtype = transactionSubtypeRepository.findByCode("DEPOSIT")
@@ -587,7 +586,7 @@ public class DataInitializer implements CommandLineRunner {
         transactionRepository.save(transaction);
     }
     private String generateSeedAccountNumber(Branch branch, int sequence) {
-        return branch.getBranchCode() + String.format("%07d", sequence);
+        return branch.getBranchCode() + "-" + String.format("%07d", sequence);
     }
 
     private String generateEcuadorianCedula(int index) {

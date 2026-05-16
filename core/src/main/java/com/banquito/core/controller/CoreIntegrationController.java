@@ -10,6 +10,10 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.banquito.core.dto.BalanceDTO;
+import com.banquito.core.dto.TransactionRequestDTO;
+import com.banquito.core.dto.TransferRequestDTO;
+import com.banquito.core.dto.TransferResultDTO;
 import com.banquito.core.integration.CoreSwitchService;
 import com.banquito.core.dto.CoreParameterResponseDTO;
 import com.banquito.core.repository.CoreParameterRepository;
