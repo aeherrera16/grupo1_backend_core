@@ -76,10 +76,21 @@ public class AccountService implements IAccountService {
         authenticationService.validateActiveCoreUser(coreUserId);
         return transactionRepository.findTop10ByAccount_Customer_IdOrderByTransactionDateDesc(customerId)
                 .stream()
-                .map(transaction -> toTransactionResponse(
-                        transaction,
-                        transaction.getAccount().getAccountNumber(),
-                        transaction.getDescription()))
+                .map(transaction -> {
+                    MovementTypeEnum counterpartType = transaction.getMovementType() == MovementTypeEnum.DEBITO
+                            ? MovementTypeEnum.CREDITO
+                            : MovementTypeEnum.DEBITO;
+                    String counterpart = transactionRepository
+                            .findByTransactionUuidAndMovementType(transaction.getTransactionUuid(), counterpartType)
+                            .map(cp -> cp.getAccount().getAccountNumber())
+                            .orElse(null);
+                    TransactionResponseDTO dto = toTransactionResponse(
+                            transaction,
+                            transaction.getAccount().getAccountNumber(),
+                            transaction.getDescription());
+                    dto.setCounterpartAccountNumber(counterpart);
+                    return dto;
+                })
                 .collect(Collectors.toList());
     }
 
@@ -266,6 +277,11 @@ public class AccountService implements IAccountService {
 
         if (account.getStatus() == AccountStatusEnum.SUSPENDIDO) {
             throw new InactiveAccountException(accountNumber);
+        }
+
+        if (account.getStatus() == AccountStatusEnum.INACTIVO) {
+            account.setStatus(AccountStatusEnum.ACTIVO);
+            log.info("Cuenta {} reactivada automaticamente por deposito", accountNumber);
         }
 
         account.setAvailableBalance(account.getAvailableBalance().add(amount));
