@@ -9,6 +9,7 @@ import com.banquito.core.model.Customer;
 import com.banquito.core.model.CustomerSubtype;
 import com.banquito.core.repository.CustomerRepository;
 import com.banquito.core.repository.CustomerSubtypeRepository;
+import com.banquito.core.service.IAuthenticationService;
 import com.banquito.core.service.ICustomerService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -16,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Slf4j
 @Service
@@ -24,6 +26,13 @@ public class CustomerService implements ICustomerService {
 
     private final CustomerRepository customerRepository;
     private final CustomerSubtypeRepository customerSubtypeRepository;
+    private final IAuthenticationService authenticationService;
+
+    @Transactional(readOnly = true)
+    @Override
+    public List<CustomerResponseDTO> findAll() {
+        return customerRepository.findAll().stream().map(this::toResponse).toList();
+    }
 
     @Transactional(readOnly = true)
     @Override
@@ -73,21 +82,10 @@ public class CustomerService implements ICustomerService {
         customer.setStatus(CustomerStatusEnum.ACTIVO);
         customer.setRegistrationDate(LocalDateTime.now());
 
-        java.util.Random random = new java.util.Random();
-
-        double minLat = -0.30;
-        double maxLat = -0.15;
-        double minLng = -78.52;
-        double maxLng = -78.45;
-
-        double randomLatitude = minLat + (maxLat - minLat) * random.nextDouble();
-        double randomLongitude = minLng + (maxLng - minLng) * random.nextDouble();
-
-        customer.setLatitude(java.math.BigDecimal.valueOf(randomLatitude));
-        customer.setLongitude(java.math.BigDecimal.valueOf(randomLongitude));
-
         log.info("Creando cliente con identificación: {}", customer.getIdentification());
-        return toResponse(customerRepository.save(customer));
+        Customer savedCustomer = customerRepository.save(customer);
+        authenticationService.createInitialWebCredential(savedCustomer);
+        return toResponse(savedCustomer);
     }
 
     @Transactional
@@ -109,24 +107,6 @@ public class CustomerService implements ICustomerService {
         }
 
         log.info("Actualizando datos del cliente con ID: {}", id);
-        return toResponse(customerRepository.save(customer));
-    }
-
-    @Transactional
-    @Override
-    public CustomerResponseDTO updateStatus(Integer id, String status) {
-        Customer customer = customerRepository.findById(id)
-                .orElseThrow(() -> new CustomerNotFoundException(String.valueOf(id)));
-
-        CustomerStatusEnum newStatus;
-        try {
-            newStatus = CustomerStatusEnum.valueOf(status.toUpperCase());
-        } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("Estado no válido: " + status + ". Valores permitidos: ACTIVO, INACTIVO, SUSPENDIDO");
-        }
-
-        customer.setStatus(newStatus);
-        log.info("Actualizando estado del cliente ID {} a {}", id, newStatus);
         return toResponse(customerRepository.save(customer));
     }
 
@@ -212,11 +192,11 @@ public class CustomerService implements ICustomerService {
                 customer.getIdentification(),
                 customer.getFirstName(),
                 customer.getLastName(),
+                customer.getLegalName(),
                 customer.getEmail(),
                 customer.getMobilePhone(),
                 customer.getAddress(),
-                customer.getStatus(),
-                customer.getLegalName()
+                customer.getStatus()
         );
     }
 }

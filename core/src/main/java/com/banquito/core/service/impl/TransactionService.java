@@ -119,7 +119,6 @@ public class TransactionService implements ITransactionService {
         return toResponse(debit, "Transferencia procesada correctamente");
     }
 
-
     private void validateUuid(String uuid) {
         if (uuid == null || uuid.isBlank()) {
             throw new IllegalArgumentException("TRANSACTION_UUID es obligatorio");
@@ -254,8 +253,7 @@ public class TransactionService implements ITransactionService {
                         transaction.getTransactionSubtype().getName(),
                         transaction.getDescription(),
                         transaction.getAmount(),
-                        transaction.getResultingBalance(),
-                        transaction.getStatus().name()
+                        transaction.getResultingBalance()
                 ))
                 .collect(Collectors.toList());
     }

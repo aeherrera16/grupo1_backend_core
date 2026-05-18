@@ -19,6 +19,11 @@ public class CustomerController {
 
     private final ICustomerService customerService;
 
+    @GetMapping
+    public ResponseEntity<List<CustomerResponseDTO>> findAll() {
+        return ResponseEntity.ok(customerService.findAll());
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<CustomerResponseDTO> findById(@PathVariable Integer id) {
         return ResponseEntity.ok(customerService.findById(id));
@@ -41,12 +46,5 @@ public class CustomerController {
             @PathVariable Integer id,
             @RequestBody CustomerRequestDTO request) {
         return ResponseEntity.ok(customerService.update(id, request));
-    }
-
-    @PatchMapping("/{id}/status/{status}")
-    public ResponseEntity<CustomerResponseDTO> updateStatus(
-            @PathVariable Integer id,
-            @PathVariable String status) {
-        return ResponseEntity.ok(customerService.updateStatus(id, status));
     }
 }

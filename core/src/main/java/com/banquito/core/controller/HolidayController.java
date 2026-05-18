@@ -12,7 +12,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.banquito.core.repository.HolidayRepository;
 
-
 @RestController
 @RequestMapping("/core/v1/holidays")
 public class HolidayController {

@@ -193,7 +193,7 @@ public class AccountService implements IAccountService {
 
         log.info("CoreUser {} cambia cuenta {} a {}", coreUserId, accountNumber, status);
 
-        if (status == AccountStatusEnum.BLOQUEADO || status == AccountStatusEnum.SUSPENDIDO) {
+        if (status == AccountStatusEnum.BLOQUEADO || status == AccountStatusEnum.SUSPENDIDO || status == AccountStatusEnum.ACTIVO) {
             String email = savedAccount.getCustomer().getEmail();
 
             if (email != null && !email.isBlank()) {
@@ -445,10 +445,12 @@ public class AccountService implements IAccountService {
 
     private String resolveAccountNumber(String requestedAccountNumber, Branch branch) {
         String accountNumber;
-        java.util.Random random = new java.util.Random();
+        java.util.Random rnd = new java.util.Random();
+
         do {
-            String randomDigits = String.format("%07d", random.nextInt(10000000));
-            accountNumber = branch.getBranchCode() + randomDigits;
+
+            accountNumber = branch.getBranchCode()
+                    + String.format("%07d", rnd.nextInt(9_000_000) + 1_000_000);
         } while (accountRepository.findByAccountNumber(accountNumber).isPresent());
 
         return accountNumber;
@@ -507,7 +509,6 @@ public class AccountService implements IAccountService {
 
     private AccountResponseDTO toResponse(Account account) {
         String customerName = resolveCustomerName(account.getCustomer());
-
         return new AccountResponseDTO(
                 account.getId(),
                 account.getAccountNumber(),

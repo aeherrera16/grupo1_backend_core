@@ -7,6 +7,8 @@ import java.util.List;
 
 public interface ICustomerService {
 
+    List<CustomerResponseDTO> findAll();
+
     CustomerResponseDTO findById(Integer id);
 
     CustomerResponseDTO findByIdentification(String identificationType, String identification);
@@ -14,6 +16,4 @@ public interface ICustomerService {
     CustomerResponseDTO create(CustomerRequestDTO request);
 
     CustomerResponseDTO update(Integer id, CustomerRequestDTO request);
-
-    CustomerResponseDTO updateStatus(Integer id, String status);
 }

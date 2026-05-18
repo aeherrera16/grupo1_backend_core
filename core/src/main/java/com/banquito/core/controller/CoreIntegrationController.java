@@ -1,5 +1,7 @@
 package com.banquito.core.controller;
 
+import com.banquito.core.dto.*;
+import com.banquito.core.repository.CoreParameterRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -15,6 +17,9 @@ import com.banquito.core.dto.TransferResultDTO;
 import com.banquito.core.integration.CoreSwitchService;
 import com.banquito.core.dto.CoreParameterResponseDTO;
 import com.banquito.core.repository.CoreParameterRepository;
+import com.banquito.core.repository.AccountRepository;
+import com.banquito.core.repository.CustomerRepository;
+import java.util.Map;
 
 import lombok.RequiredArgsConstructor;
 
@@ -25,6 +30,8 @@ public class CoreIntegrationController {
 
     private final CoreSwitchService coreSwitchService;
     private final CoreParameterRepository coreParameterRepository;
+    private final AccountRepository accountRepository;
+    private final CustomerRepository customerRepository;
 
     @GetMapping("/balance/{accountNumber}")
     public ResponseEntity<BalanceDTO> getBalance(@PathVariable String accountNumber) {
@@ -49,6 +56,15 @@ public class CoreIntegrationController {
                         parameter.getValueString())))
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
+
+        @GetMapping("/customer/{ruc}/favorite-account")
+        public ResponseEntity<Map<String, Object>> getFavoriteAccountByRuc(@PathVariable String ruc) {
+        return customerRepository.findByIdentificationTypeAndIdentification("RUC", ruc)
+            .map(customer -> accountRepository.findByCustomer_IdAndIsFavoriteTrue(customer.getId())
+                .map(account -> ResponseEntity.ok(Map.<String, Object>of("accountNumber", account.getAccountNumber())))
+                .orElseGet(() -> ResponseEntity.notFound().build()))
+            .orElseGet(() -> ResponseEntity.notFound().build());
+        }
 
     @PostMapping("/transfer")
     public ResponseEntity<TransferResultDTO> transfer(@RequestBody TransferRequestDTO request) {

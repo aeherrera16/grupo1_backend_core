@@ -15,28 +15,28 @@ public class CustomerResponseDTO {
     private String identification;
     private String firstName;
     private String lastName;
+    private String legalName;
     private String email;
     private String mobilePhone;
     private String address;
     private CustomerStatusEnum status;
-    private String legalName;
 
     public CustomerResponseDTO() {
     }
 
     public CustomerResponseDTO(Integer id, CustomerTypeEnum customerType, String identificationType,
-                               String identification, String firstName, String lastName, String email,
-                               String mobilePhone, String address, CustomerStatusEnum status, String legalName) {
+                               String identification, String firstName, String lastName, String legalName,
+                               String email, String mobilePhone, String address, CustomerStatusEnum status) {
         this.id = id;
         this.customerType = customerType;
         this.identificationType = identificationType;
         this.identification = identification;
         this.firstName = firstName;
         this.lastName = lastName;
+        this.legalName = legalName;
         this.email = email;
         this.mobilePhone = mobilePhone;
         this.address = address;
         this.status = status;
-        this.legalName = legalName;
     }
 }
